@@ -12,7 +12,7 @@
 #include "Footer.h"
 
 //==============================================================================
-Footer::Footer(MusicList* list, juce::AudioFormatManager& manager) : song{}, thumbnail{512, manager, thumbCache}, thumbCache{24}
+Footer::Footer(MusicList* list, juce::AudioFormatManager& manager) : song{}, thumbnail{512, manager, thumbCache}, thumbCache{25}
 {
     pop = true;
     ppButton.setImages(false, true, true, juce::ImageFileFormat::loadFrom(BinaryData::play_png, BinaryData::play_pngSize), 1.0, juce::Colours::transparentBlack, juce::ImageFileFormat::loadFrom(BinaryData::play_png, BinaryData::play_pngSize), 1, juce::Colours::transparentBlack, juce::ImageFileFormat::loadFrom(BinaryData::play_png, BinaryData::play_pngSize), 0.5, juce::Colours::grey);
