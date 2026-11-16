@@ -12,6 +12,9 @@
 #include "SoundGridItem.h"
 
 //==============================================================================
+
+bool SoundGrid::playing = false;
+
 SoundGrid::SoundGrid()
 {
 }
@@ -64,11 +67,14 @@ void SoundGrid::makeList(std::vector<std::shared_ptr<Sound>> s){
             removeChildComponent(sounds[i].get());
         }
         sounds.clear();
+        mixer.removeAllInputs();
     }
     
     for (int i = 0; i < s.size(); i++) {
         sounds.emplace_back(new SoundGridItem(s[i]));
         addAndMakeVisible(sounds.back().get());
+        mixer.addInputSource(sounds.back().get()->getSound().get(), false);
+        sounds.back().get()->getSound()->sound.addChangeListener(this);
     }
     calcGrid();
 }
@@ -84,20 +90,44 @@ void SoundGrid::calcGrid(){
     setWidth(width);
 }
 
-void SoundGrid::prepareToPlay (int samplesPerBlockExpected, double sampleRate){
-    
-}
-void SoundGrid::getNextAudioBlock (const juce::AudioSourceChannelInfo &bufferToFill){
-    bufferToFill.clearActiveBufferRegion();
-}
-void SoundGrid::releaseResources (){
+void SoundGrid::changeListenerCallback (juce::ChangeBroadcaster* source){
     for (int i = 0; i < sounds.size(); i++){
-        sounds[i]->getSound()->releaseResources();
+        if (&sounds[i]->getSound()->sound == source){
+            playing = sounds[i]->getSound()->sound.isPlaying();
+            if (!playing){
+                std::cout << "got callback to stop sound!\n";
+                sounds[i]->swapPP();
+            }
+        }
     }
 }
 
+//=============================================================================================
+
+void SoundGrid::prepareToPlay (int samplesPerBlockExpected, double sampleRate){
+    mixer.prepareToPlay(samplesPerBlockExpected, sampleRate);
+}
+void SoundGrid::getNextAudioBlock (const juce::AudioSourceChannelInfo &bufferToFill){
+    mixer.getNextAudioBlock(bufferToFill);
+    if (!playing){
+        bufferToFill.clearActiveBufferRegion();
+    }
+}
+void SoundGrid::releaseResources (){
+    mixer.removeAllInputs();
+    for (int i = 0; i < sounds.size(); i++){
+        sounds[i]->getSound()->releaseResources();
+    }
+    mixer.releaseResources();
+}
+
+//=============================================================================================
+
 SoundGrid::SoundGridItem::SoundGridItem(std::shared_ptr<Sound> s) : sound{s}, ppButton{"Play"}{
     addAndMakeVisible(ppButton);
+    ppButton.onClick = [this](){ppClick();};
+    pop = true;
+    startPos = 0.0;
 }
 
 void SoundGrid::SoundGridItem::paint(juce::Graphics &g){
@@ -115,4 +145,30 @@ void SoundGrid::SoundGridItem::resized(){
 
 std::shared_ptr<Sound> SoundGrid::SoundGridItem::getSound(){
     return sound;
+}
+
+void SoundGrid::SoundGridItem::ppClick(){
+    swapPP();
+    if (!pop){
+        sound->sound.setPosition(startPos);
+        sound->sound.start();
+        std::cout << "starting sound\n";
+    }
+    else {
+        sound->sound.stop();
+        std::cout << "stopping sound\n";
+    }
+    
+}
+
+void SoundGrid::SoundGridItem::swapPP(){
+    if(pop){
+        ppButton.setButtonText("Pause");
+        pop = false;
+    }
+    else {
+        ppButton.setButtonText("Play");
+        pop = true;
+    }
+    std::cout << "Is button in ready to play state?: " << pop << "\n";
 }

@@ -16,7 +16,7 @@
 //==============================================================================
 /*
 */
-class SoundGrid  : public juce::Component, public juce::AudioSource
+class SoundGrid  : public juce::Component, public juce::ChangeListener, public juce::AudioSource
 {
 public:
     SoundGrid();
@@ -27,6 +27,7 @@ public:
     void setWidth(int w);
     void makeList(std::vector<std::shared_ptr<Sound>>);
     void calcGrid();
+    void changeListenerCallback (juce::ChangeBroadcaster* source) override;
     
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate) override;
     void getNextAudioBlock (const juce::AudioSourceChannelInfo &bufferToFill) override;
@@ -42,13 +43,22 @@ public:
             void paint (juce::Graphics&) override;
             void resized() override;
             std::shared_ptr<Sound> getSound();
+            
+        void ppClick();
+        void swapPP();
+        
         private:
             std::shared_ptr<Sound> sound;
             juce::TextButton ppButton;
+            bool pop;
+            double startPos;
+        
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SoundGridItem)
     };
 private:
     std::vector<std::unique_ptr<SoundGridItem>> sounds;
+    juce::MixerAudioSource mixer;
+    static bool playing;
     int width;
     int cols;
     int rows;

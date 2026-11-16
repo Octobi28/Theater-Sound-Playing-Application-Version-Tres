@@ -46,6 +46,7 @@ struct Sound : juce::AudioSource {
                 bufferToFill.clearActiveBufferRegion();
                 return;
         }
+        std::cout << "sound " << name << " playing at position " << sound.getCurrentPosition() << "\n";
         sound.getNextAudioBlock(bufferToFill);
     }
     void releaseResources () override{sound.releaseResources();}
